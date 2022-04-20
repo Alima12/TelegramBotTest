@@ -3,7 +3,7 @@ import time
 from bs4 import BeautifulSoup
 
 class Scraper:
-    sleep_time = 10
+    sleep_time = 15
     def __init__(self):
         # browser = webdriver.Chrome(executable_path="driver/chromedriver.exe")
         browser = webdriver.Firefox(executable_path="driver/geckodriver.exe")
@@ -31,5 +31,16 @@ class Scraper:
 
         self.scrapper.close()
         return records
-
+    
+    def get_overall(self):
+        soup = BeautifulSoup(self.scrapper.page_source, "html.parser")
+        text = soup.select("#FastView > span.s")[0].text
+        _temp = text.split("-")[0:2]
         
+        self.scrapper.close()
+
+        return {
+            "count": _temp[0],
+            "percent": _temp[1] 
+        }
+ 
