@@ -1,26 +1,25 @@
 from multiprocessing import Condition
 import sqlite3
 from datetime import datetime, timedelta
-
-
 class Records:
     def __init__(self):
         self.conn = sqlite3.connect('my_records.db')
+        self.create()
     ########################## Create Table ######################################
     def create(self):
         records_table = """CREATE TABLE IF NOT EXISTS RECORDS(
             Symbol NVARCHAR,
             FullName  NVARCHAR(150),
-            LastPrice FLOAT,
-            ClosedPrice FLOAT,
+            LastPrice NVARCHAR(50),
+            ClosedPrice NVARCHAR(50),
             RecordAt DATETIME,
             Type INT,
             isLast BIT
         );"""
         over_all_table = """CREATE TABLE IF NOT EXISTS OVERALL(
-            Count  BIGINT,
-            Percent  FLOAT,
-            RecordAt DATETIME,
+            Count  NVARCHAR(100),
+            Percent  NVARCHAR(100),
+            RecordAt DATETIME
         );"""
         user_condition = """CREATE TABLE IF NOT EXISTS USERS(
             ID VARCHAR(50),
@@ -46,20 +45,18 @@ class Records:
 
 
     ################################## CHANGE isLAST STATUS ########################################
-
-    def disable(self, symbol -> str)->None:
+    def get_disable(self, symbol:str)-> None:
         q = f"""UPDATE RECORDS SET isLast = 0 WHERE Symbol = "{symbol}" """
         self.conn.execute(q)
         self.conn.commit()
-
     ################################## CHANGE iSLAST STATUS ########################################
 
     ################################## Get Symbol By Name ########################################
-    def get_symbol(self, name->str)->str:
+    def get_symbol(self, name:str)->str:
         q = f"""SELECT Symbol FROM RECORDS WHERE FullName ="{name}";"""
         cursor = self.conn.execute(q)
         records = [row for row in cursor]
-        return records[0]
+        return records[0][0]
     ################################## Get Symbol By Name ########################################
 
 
@@ -80,7 +77,7 @@ class Records:
 
 
     ################################## Add New OVERALL ########################################
-    def add_overall(self, record->dict)-> None:
+    def add_overall(self, record:dict)-> None:
         now = datetime.now()
         q = f"""INSERT INTO OVERALL VALUES(
             "{record['Count']}",
@@ -94,7 +91,7 @@ class Records:
 
 
     ################################## User Lats Condition ########################################
-    def user_condition(self, id-> int)-> str:
+    def user_condition(self, id:int)-> str:
         q = f"""SELECT LastCommand FROM USERS WHERE ID={id} """
         cursor = self.conn.execute(q)
         records = [row for row in cursor]
@@ -102,7 +99,7 @@ class Records:
     ################################## User Lats Condition ########################################
 
     ########################## Check Exicting User ##############################
-    def user_exist(self, id->int)-> bool:
+    def user_exist(self, id:int)-> bool:
         q = f"""Select count(*) from USERS where ID = {id}"""
         count   =   self.conn.execute(q)
         for row in count:
@@ -115,13 +112,9 @@ class Records:
 
 
     ########################## Add New User ##############################
-    def add_user(self, id->int):
+    def add_user(self, id:int):
         now = datetime.now()
-        q = f"""INSERT INTO USERS VALUES(
-            {id},
-            "start",
-            {now}
-        );"""
+        q = f"""INSERT INTO USERS VALUES({id}, "start", "{now}");"""
         self.conn.execute(q)
         self.conn.commit()
     ########################## Add New User ##############################
@@ -129,7 +122,7 @@ class Records:
 
 
     ################################## User Lats Condition ########################################
-    def update_user_condition(self, id-> int, condition-> str)-> None:
+    def update_user_condition(self, id:int, condition:str)-> None:
         q = f"""UPDATE USERS SET LastCommand = "{condition}" WHERE ID = {id} """
         self.conn.execute(q)
         self.conn.commit()
@@ -140,18 +133,10 @@ class Records:
 
 
     ################################## INSERT NEW Record #########################################
-    def insert_record(self, record -> dict)-> None:
+    def insert_record(self, record:dict)-> None:
         now = datetime.now()
-        self.disable(record["Symbol"])
-        q = f"""INSERT INTO RECORDS VALUES(
-            "{record['Symbol']}",
-            "{record['FullName']}",
-            {record['LastPrice']},
-            {record['ClosedPrice']},
-            {now},
-            {record['Type']},
-            True
-        );"""
+        self.get_disable(record["Symbol"])
+        q = f"""INSERT INTO RECORDS VALUES("{record['Symbol']}", "{record['FullName']}", "{record['LastPrice']}", "{record['ClosedPrice']}", "{now}", {record['Type']}, 1);"""
         self.conn.execute(q)
         self.conn.commit()
 
@@ -164,20 +149,19 @@ class Records:
         
 
 
-class RecordManager():
+class RecordManager:
     def __init__(self) -> None:
         self.db = Records()
-        self.db()
 
     def get_last_records(self)->list:
         return self.db.get_records()
 
-    def set_new_records(self, records-> list):
+    def set_new_records(self, records:list):
         for record in records:
             self.db.insert_record(record)
         return True
     
-    def get_last_command(self, user->object)-> str:
+    def get_last_command(self, user:object)-> str:
         if self.db.user_exist(user.id):
             result = self.db.user_condition(user.id)
             return result
@@ -185,12 +169,23 @@ class RecordManager():
             self.db.add_user(user.id)
             return "start"
 
+    def set_last_command(self, user:object, condition:str)-> str:
+        self.db.update_user_condition(user.id, condition)
+        return True
+
     def get_last_overall(self):
         return self.db.get_overall()
 
-    def set_overall(self, count, percent):
+    def set_overall(self, count:int, percent:int):
         self.db.add_overall({
             "Coumt":count,
             "Percent":percent
         })
         return True
+
+    def get_symbol_by_name(self, name:str) ->str:
+        response = self.db.get_symbol(name)
+        return response
+
+    def done(self):
+        self.db.closedb()
