@@ -36,7 +36,7 @@ class Records:
 
     ########################## GET LAST RECORDS #######################
     def get_records(self)-> list:
-        q = f"""SELECT * FROM RECORDS WHERE isLast==TRUE;"""
+        q = f"""SELECT * FROM RECORDS WHERE isLast=TRUE;"""
         cursor = self.conn.execute(q)
         records = [row for row in cursor]
         return records
@@ -56,7 +56,7 @@ class Records:
 
     ################################## Get Symbol By Name ########################################
     def get_symbol(self, name->str)->str:
-        q = f"""SELECT Symbol FROM RECORDS WHERE FullName =="{name}";"""
+        q = f"""SELECT Symbol FROM RECORDS WHERE FullName ="{name}";"""
         cursor = self.conn.execute(q)
         records = [row for row in cursor]
         return records[0]
@@ -95,7 +95,7 @@ class Records:
 
     ################################## User Lats Condition ########################################
     def user_condition(self, id-> int)-> str:
-        q = f"""SELECT LastCommand FROM USERS WHERE ID=={id} """
+        q = f"""SELECT LastCommand FROM USERS WHERE ID={id} """
         cursor = self.conn.execute(q)
         records = [row for row in cursor]
         return records[0][0]
