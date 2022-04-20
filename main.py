@@ -20,11 +20,9 @@ class Bot:
     def __init__(self,token = "5058044017:AAE5gy_TTrpIdDHBoJKXb2pjAE8sy6HnrLg"):
         self.updater = Updater(token=token, use_context=True)
         self.bot = self.updater.bot
-        # self.manager = RecordManager()
+        self.manager = RecordManager()
         
     def start(self, update: Update, context: CallbackContext, *args, **kwargs) -> None:
-        """Sends a message with three inline buttons attached."""
-
         sender = update.effective_chat.id
         buttons = [
            [KeyboardButton("SYMBOL"),KeyboardButton("OVERALL INDEX"),KeyboardButton("CLOSED/LAST TRADED PRICE"),]
@@ -34,7 +32,6 @@ class Bot:
 
 
     def symbol(self, update) -> None:
-        """Sends a message with three inline buttons attached."""
         sender = update.effective_chat
         buttons = [[
             KeyboardButton("Back")
@@ -43,6 +40,15 @@ class Bot:
         self.manager.set_last_command(sender, "symbol")
         self.bot.send_message(sender.id, "نام کامل را وارد کنید", reply_markup=reply_markup)
 
+    def price(self, update) -> None:
+        sender = update.effective_chat
+        buttons = [[
+            KeyboardButton("Back")
+        ]]
+        reply_markup = ReplyKeyboardMarkup(buttons)
+        self.manager.set_last_command(sender, "price")
+        self.bot.send_message(sender.id, " لطفا نماد را وارد کنید", reply_markup=reply_markup)
+
     def handler(self, update, context):
         self.manager = RecordManager()
 
@@ -50,26 +56,49 @@ class Bot:
         message = update.effective_message.text
         condition = self.manager.get_last_command(sender)
         response = ""
+
+        # میشد از switch case استفاده کرد ولی بخاطر نصب نبودن پایتون 3.10  امکان استفاده نداشتم
         if condition == "symbol":
             if message == "Back":
                 self.manager.set_last_command(sender, "start")
                 self.start(update, context)
-
             else:
                 try:
                     response = self.manager.get_symbol_by_name(message)
-                    self.manager.set_last_command(sender, "start")
                 except:
                     self.manager.set_last_command(sender, "symbol")
                     response = "پیدا نشد دوباره امتحان کنید"
                 self.bot.send_message(sender.id, response)
 
+        elif condition == "price":
+            if message == "Back":
+                self.manager.set_last_command(sender, "start")
+                self.start(update, context)
+            else:
+                try:
+                    response = self.manager.get_price_by_symbol(message)
+                    self.bot.send_message(sender.id, f"""نماد: {response["Symbol"]}
+نام کامل: {response["FullName"]}
+آخرین قیمت: {response["LastPrice"]}
+قیمت پایانی: {response["ClosedPrice"]}
+                """)
+
+                except:
+                    self.manager.set_last_command(sender, "price")
+                    response = "پیدا نشد دوباره امتحان کنید"
+                    self.bot.send_message(sender.id, response)
+
+
+
         elif message == "SYMBOL":
             self.symbol(update)
         elif message == "OVERALL INDEX":
-            pass
+            response = self.manager.get_last_overall()
+            self.bot.send_message(sender.id, f"""{response["count"]}
+درصد : {response["percent"]}
+            """)
         elif message == "CLOSED/LAST TRADED PRICE":
-            pass
+            self.price(update)
         else:
             self.start(update, context)
         self.manager.done()
@@ -97,10 +126,13 @@ class Bot:
     #         time.sleep(60)
 
 
-        # scraper = Scraper()
-        # new_prices = scraper.update_price()
-        # self.manager.set_new_records(new_prices)
-        pass
+        scraper = Scraper()
+        new_prices = scraper.update_price()
+        new_overall = scraper.get_overall()
+        self.manager.set_overall(new_overall["count"], new_overall["percent"])
+        self.manager.set_new_records(new_prices)
+        self.manager.done()
+        
 
             
 

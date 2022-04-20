@@ -13,7 +13,7 @@ class Scraper:
         time.sleep(self.sleep_time)
         self.scrapper = browser
     
-    def update_price(self):
+    def update_price(self)->list:
         soup = BeautifulSoup(self.scrapper.page_source, "html.parser")
         result = soup.select("#trade > div.objbox > table> tbody > tr")[1:10]
         indexer = 0
@@ -29,10 +29,9 @@ class Scraper:
             indexer+=1
             records.append(_temp_record)
 
-        self.scrapper.close()
         return records
     
-    def get_overall(self):
+    def get_overall(self)->dict:
         soup = BeautifulSoup(self.scrapper.page_source, "html.parser")
         text = soup.select("#FastView > span.s")[0].text
         _temp = text.split("-")[0:2]

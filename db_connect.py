@@ -76,14 +76,11 @@ class Records:
     ##################################  Get OVERALL ########################################
 
 
+
     ################################## Add New OVERALL ########################################
     def add_overall(self, record:dict)-> None:
         now = datetime.now()
-        q = f"""INSERT INTO OVERALL VALUES(
-            "{record['Count']}",
-            "{record['Percent']}",
-            {now}
-        );"""
+        q = f"""INSERT INTO OVERALL VALUES("{record['Count']}", "{record['Percent']}", "{now}");"""
         self.conn.execute(q)
         self.conn.commit()
     ##################################  Add OVERALL ########################################
@@ -178,7 +175,7 @@ class RecordManager:
 
     def set_overall(self, count:int, percent:int):
         self.db.add_overall({
-            "Coumt":count,
+            "Count":count,
             "Percent":percent
         })
         return True
@@ -186,6 +183,15 @@ class RecordManager:
     def get_symbol_by_name(self, name:str) ->str:
         response = self.db.get_symbol(name)
         return response
+
+    def get_price_by_symbol(self, symbol:str)->dict:
+        result = [record for record in self.get_last_records() if record[0] == symbol][0]
+        return {
+            "Symbol": result[0],
+            "FullName": result[1],
+            "LastPrice": result[2],
+            "ClosedPrice": result[3]
+        }
 
     def done(self):
         self.db.closedb()
