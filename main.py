@@ -1,22 +1,11 @@
 from telegram.ext import Updater, Filters
 from telegram.ext import CommandHandler, MessageHandler, CallbackContext
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputMediaPhoto, Update,KeyboardButton, ReplyKeyboardMarkup
+from telegram import Update,KeyboardButton, ReplyKeyboardMarkup
 from db_connect import RecordManager
-import threading
-import time
 from scraper import Scraper
 
 
 class Bot:
-    # Send Delay
-    delay = 240
-
-    # Admin ID
-    admin_id = 0
-
-    driver_is_busy = False
-    _driver = None
-
     def __init__(self,token = "5058044017:AAE5gy_TTrpIdDHBoJKXb2pjAE8sy6HnrLg"):
         self.updater = Updater(token=token, use_context=True)
         self.bot = self.updater.bot

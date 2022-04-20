@@ -1,6 +1,7 @@
-from multiprocessing import Condition
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
+
+
 class Records:
     def __init__(self):
         self.conn = sqlite3.connect('my_records.db')
