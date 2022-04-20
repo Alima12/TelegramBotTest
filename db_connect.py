@@ -62,6 +62,9 @@ class Records:
         return records[0]
     ################################## Get Symbol By Name ########################################
 
+
+
+
     ################################## Get OVERALL ########################################
     def get_overall(self)-> dict:
         q = f"""SELECT Count, Percent FROM OVERALL ORDER BY RecordAt DESC LIMIT 1; """
@@ -98,6 +101,32 @@ class Records:
         return records[0][0]
     ################################## User Lats Condition ########################################
 
+    ########################## Check Exicting User ##############################
+    def user_exist(self, id->int)-> bool:
+        q = f"""Select count(*) from USERS where ID = {id}"""
+        count   =   self.conn.execute(q)
+        for row in count:
+            if row[0]>0:
+                return  True
+            else:
+                return  False
+
+    ########################## Check Exicting User ##############################
+
+
+    ########################## Add New User ##############################
+    def add_user(self, id->int):
+        now = datetime.now()
+        q = f"""INSERT INTO USERS VALUES(
+            {id},
+            "start",
+            {now}
+        );"""
+        self.conn.execute(q)
+        self.conn.commit()
+    ########################## Add New User ##############################
+
+
 
     ################################## User Lats Condition ########################################
     def update_user_condition(self, id-> int, condition-> str)-> None:
@@ -107,6 +136,8 @@ class Records:
 
 
     ################################## User Lats Condition ########################################
+
+
 
     ################################## INSERT NEW Record #########################################
     def insert_record(self, record -> dict)-> None:
@@ -133,11 +164,33 @@ class Records:
         
 
 
+class RecordManager():
+    def __init__(self) -> None:
+        self.db = Records()
+        self.db()
 
-def generator():
-    db = Records()
-    db.create()
-    return db
+    def get_last_records(self)->list:
+        return self.db.get_records()
 
-if __name__ == "__main__":
-    generator()
+    def set_new_records(self, records-> list):
+        for record in records:
+            self.db.insert_record(record)
+        return True
+    
+    def get_last_command(self, user->object)-> str:
+        if self.db.user_exist(user.id):
+            result = self.db.user_condition(user.id)
+            return result
+        else:
+            self.db.add_user(user.id)
+            return "start"
+
+    def get_last_overall(self):
+        return self.db.get_overall()
+
+    def set_overall(self, count, percent):
+        self.db.add_overall({
+            "Coumt":count,
+            "Percent":percent
+        })
+        return True
